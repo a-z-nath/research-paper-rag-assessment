@@ -44,3 +44,12 @@ def create_tables():
 def drop_tables():
     """Drop all tables in the database (use with caution!)"""
     Base.metadata.drop_all(bind=engine)
+
+async def init_database():
+    """Initialize database with tables"""
+    try:
+        create_tables()
+        print("Database tables created successfully")
+    except Exception as e:
+        print(f"Database initialization failed: {e}")
+        raise

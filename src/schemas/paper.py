@@ -48,6 +48,23 @@ class PaperSummary(BaseModel):
     class Config:
         from_attributes = True
 
+class PaperListResponse(BaseModel):
+    """Response schema for paper listing endpoints"""
+    success: bool = Field(..., description="Whether request was successful")
+    papers: List[PaperResponse] = Field(..., description="List of papers")
+    total: int = Field(..., description="Total number of papers")
+    page: int = Field(..., description="Current page number")
+    limit: int = Field(..., description="Papers per page")
+    total_pages: int = Field(..., description="Total number of pages")
+
+class PaperUploadResponse(BaseModel):
+    """Response schema for paper upload endpoints"""
+    success: bool = Field(..., description="Whether upload was successful")
+    paper_id: Optional[UUID] = Field(None, description="Paper UUID if successful")
+    message: str = Field(..., description="Upload status message")
+    file_name: Optional[str] = Field(None, description="Original filename")
+    processing_status: str = Field(..., description="Processing status")
+
 class PaperList(BaseModel):
     """Schema for paper list responses"""
     papers: List[PaperSummary] = Field(..., description="List of papers")

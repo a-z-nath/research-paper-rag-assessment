@@ -48,5 +48,54 @@ class ProcessingStatus(BaseModel):
     paper_id: UUID = Field(..., description="Paper UUID")
     status: str = Field(..., description="Current processing status")
     progress: float = Field(..., ge=0.0, le=100.0, description="Processing progress percentage")
+
+from pydantic import BaseModel
+from typing import Optional, List
+from datetime import datetime
+
+
+class FileUploadResult(BaseModel):
+    """Result for individual file upload"""
+    file_name: str
+    success: bool
+    message: str
+    paper_id: Optional[str] = None
+    title: Optional[str] = None
+    authors: Optional[str] = None
+    year: Optional[int] = None
+    num_pages: Optional[int] = None
+    chunks_created: Optional[int] = None
+    file_path: Optional[str] = None
+    processing_time: Optional[float] = None
+    error_details: Optional[str] = None
+
+
+class BatchUploadResponse(BaseModel):
+    """Response model for batch paper upload"""
+    success: bool
+    message: str
+    collection_name: str
+    total_files: int
+    successful_uploads: int
+    failed_uploads: int
+    uploaded_papers: List[FileUploadResult]
+    total_processing_time: float
+
+
+class PaperUploadResponse(BaseModel):
+    """Response model for single paper upload (legacy)"""
+    success: bool
+    message: str
+    paper_id: Optional[str] = None
+    title: Optional[str] = None
+    file_name: Optional[str] = None
+    processing_time: Optional[float] = None
+
+class UploadStatus:
+    """Upload processing status constants"""
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
     message: str = Field(..., description="Current processing step")
     error: Optional[str] = Field(None, description="Error message if any")

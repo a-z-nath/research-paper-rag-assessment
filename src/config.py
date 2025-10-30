@@ -29,3 +29,7 @@ class Settings:
     UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
 
 settings = Settings()
+
+def get_settings():
+    """Get settings instance"""
+    return settings
