@@ -23,6 +23,7 @@ import uvicorn
 sys.path.append(str(Path(__file__).parent))
 
 from src.api.routes import router as api_router
+from src.api.query import router as query_router
 from src.config import get_settings
 from src.database import init_database
 
@@ -118,6 +119,7 @@ async def root():
 
 # Include API routes
 app.include_router(api_router, prefix="/api")
+app.include_router(query_router, prefix="/api")
 
 if __name__ == "__main__":
     # Run the application

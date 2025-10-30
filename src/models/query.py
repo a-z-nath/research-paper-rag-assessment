@@ -2,7 +2,7 @@
 Query model for storing search history and analytics
 """
 from datetime import datetime
-from sqlalchemy import Column, Text, Integer, DateTime, Index, CheckConstraint, ARRAY, Numeric
+from sqlalchemy import Column, Text, Integer, DateTime, Index, CheckConstraint, ARRAY, Numeric, Float
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from .base import BaseModel
@@ -33,6 +33,8 @@ class Query(BaseModel):
         default=[], 
         server_default="{}"
     )  # chunk IDs used in citations
+    response_time = Column(Float, nullable=True)  # Processing time in seconds
+    error_message = Column(Text, nullable=True)  # Error message if query failed
     created_at = Column(DateTime(timezone=True), default=func.now(), server_default=func.now())
     
     # Check constraint for confidence

@@ -8,12 +8,13 @@ from pydantic import BaseModel, Field, validator
 
 class Citation(BaseModel):
     """Citation information for query responses"""
-    paper_title: str = Field(..., description="Title of the cited paper")
-    paper_id: UUID = Field(..., description="UUID of the cited paper")
-    section: str = Field(..., description="Section name where information was found")
-    page: Optional[int] = Field(None, ge=1, description="Page number")
-    relevance_score: float = Field(..., ge=0.0, le=1.0, description="Relevance score (0-1)")
-    snippet: str = Field(..., max_length=500, description="Relevant text snippet")
+    paper_id: str = Field(..., description="Paper UUID")
+    chunk_id: str = Field(..., description="Chunk/Qdrant vector ID")
+    paper_title: str = Field(..., description="Title of the source paper")
+    section: str = Field(..., description="Section name (e.g., Introduction, Methods)")
+    snippet: str = Field(..., description="Relevant text snippet from the paper")
+    page: Optional[int] = Field(default=None, description="Page number in the original paper")
+    relevance_score: float = Field(..., ge=0.0, le=1.0, description="Relevance score from vector search")
 
 class QueryRequest(BaseModel):
     """Schema for query requests"""
@@ -29,7 +30,7 @@ class QueryRequest(BaseModel):
         le=20, 
         description="Number of top results to retrieve"
     )
-    paper_ids: Optional[List[UUID]] = Field(
+    paper_ids: Optional[List[str]] = Field(
         None, 
         description="Optional list of paper IDs to limit search to"
     )
@@ -42,11 +43,33 @@ class QueryRequest(BaseModel):
 
 class QueryResponse(BaseModel):
     """Schema for query responses"""
-    answer: str = Field(..., description="Generated answer to the question")
-    citations: List[Citation] = Field(..., description="List of citations supporting the answer")
-    sources_used: List[str] = Field(..., description="List of paper titles used as sources")
-    confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score for the answer")
-    processing_time: float = Field(..., ge=0.0, description="Processing time in seconds")
+    question: str = Field(..., description="Original question asked")
+    answer: str = Field(..., description="Generated answer from LLM")
+    citations: List[Citation] = Field(default=[], description="List of citations supporting the answer")
+    sourced_paper_used: List[str] = Field(default=[], description="List of paper IDs used to generate the answer")
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score of the answer")
+    query_id: str = Field(..., description="Unique query identifier")
+    response_time: float = Field(..., description="Time taken to process the query in seconds")
+
+class QueryHistoryItem(BaseModel):
+    """Individual query history item"""
+    query_id: str
+    question: str
+    answer: str
+    confidence: float
+    response_time: float
+    created_at: datetime
+    sourced_papers_count: int
+    citations_count: int
+
+class QueryHistoryResponse(BaseModel):
+    """Response schema for query history listing"""
+    success: bool
+    queries: List[QueryHistoryItem]
+    total: int
+    page: int
+    limit: int
+    total_pages: int
 
 class QueryHistory(BaseModel):
     """Schema for query history"""

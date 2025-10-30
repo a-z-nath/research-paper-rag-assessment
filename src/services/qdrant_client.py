@@ -322,10 +322,11 @@ class QdrantClientService:
                     )
                 elif "any" in condition:
                     # Match any of the values
+                    from qdrant_client.http.models import MatchAny
                     must_conditions.append(
                         FieldCondition(
                             key=field,
-                            match=Match(any=condition["any"])
+                            match=MatchAny(any=condition["any"])
                         )
                     )
                 elif "range" in condition:
