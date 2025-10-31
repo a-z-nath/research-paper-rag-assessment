@@ -20,8 +20,10 @@ from src.database import get_database_session
 from src.models.paper import Paper
 from src.models.paper_stats import PaperStats
 from src.models.query import Query
+from src.models.topic_analytics import TopicAnalytics, TopicGenerationLog
 from src.schemas.query import QueryRequest, QueryResponse, Citation
 from src.services.rag_pipeline import RAGPipeline
+from src.services.tfidf_topic_service import TFIDFTopicService
 from src.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -38,6 +40,9 @@ rag_pipeline = RAGPipeline(
     ollama_model=settings.OLLAMA_MODEL,
     ollama_api_key=settings.OLLAMA_API_KEY
 )
+
+# Initialize TF-IDF topic service
+tfidf_service = TFIDFTopicService()
 
 @router.post("/query", response_model=QueryResponse)
 async def query_papers(
@@ -243,69 +248,71 @@ async def get_query_history(
 
 @router.get("/analytics/popular")
 async def get_popular_analytics(
+    force_rebuild: bool = False,
+    limit: int = 10,
     session: Session = Depends(get_database_session)
 ):
     """
-    Get analytics about popular papers and queries.
+    Get analytics about popular query topics using TF-IDF analysis.
+    
+    This endpoint uses a timeline-based approach:
+    - First time: Processes all queries and stores topics in database
+    - Subsequent calls: Only processes new queries since last update
+    - If no new queries: Returns cached results from database
     
     Args:
+        force_rebuild: Force complete rebuild of topics (default: False)
+        limit: Number of top topics to return (default: 10)
         session: Database session
     
     Returns:
-        dict: Analytics data
+        dict: TF-IDF based topic analytics with processing metadata
     """
     try:
-        # Most queried papers
-        popular_papers = session.query(
-            Paper.id,
-            Paper.title,
-            PaperStats.queries_count
-        ).join(PaperStats, Paper.id == PaperStats.paper_id).filter(
-            PaperStats.queries_count > 0
-        ).order_by(PaperStats.queries_count.desc()).limit(10).all()
+        # Process topics using timeline approach
+        processing_result = tfidf_service.process_topics_timeline(
+            session=session,
+            force_rebuild=force_rebuild
+        )
         
-        # Most viewed papers
-        popular_views = session.query(
-            Paper.id,
-            Paper.title,
-            PaperStats.views_count
-        ).join(PaperStats, Paper.id == PaperStats.paper_id).filter(
-            PaperStats.views_count > 0
-        ).order_by(PaperStats.views_count.desc()).limit(10).all()
+        if not processing_result.get("success"):
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Topic processing failed: {processing_result.get('error', 'Unknown error')}"
+            )
         
-        # Recent query trends
-        recent_queries = session.query(Query).order_by(
-            Query.created_at.desc()
-        ).limit(5).all()
+        # Get top topics from database
+        top_topics = tfidf_service.get_top_topics(session=session, limit=limit)
+        
+        # Get processing metadata
+        last_log = session.query(TopicGenerationLog).order_by(
+            TopicGenerationLog.last_processed_timestamp.desc()
+        ).first()
+        
+        # Calculate percentages
+        total_queries = last_log.total_queries_processed if last_log else 0
+        for topic in top_topics:
+            if total_queries > 0:
+                topic["percentage"] = round((topic["query_count"] / total_queries) * 100, 1)
+            else:
+                topic["percentage"] = 0.0
         
         return {
             "success": True,
-            "popular_papers_by_queries": [
-                {
-                    "paper_id": str(p.id),
-                    "title": p.title,
-                    "query_count": p.queries_count
-                }
-                for p in popular_papers
-            ],
-            "popular_papers_by_views": [
-                {
-                    "paper_id": str(p.id),
-                    "title": p.title,
-                    "view_count": p.views_count
-                }
-                for p in popular_views
-            ],
-            "recent_queries": [
-                {
-                    "question": q.question[:100] + "..." if len(q.question) > 100 else q.question,
-                    "confidence": q.confidence,
-                    "created_at": q.created_at
-                }
-                for q in recent_queries
-            ]
+            "topics": top_topics,
+            "metadata": {
+                "total_queries_processed": total_queries,
+                "topics_in_database": len(top_topics),
+                "last_updated": last_log.last_processed_timestamp if last_log else None,
+                "processing_time": processing_result.get("processing_time", 0),
+                "cache_hit": processing_result.get("cache_hit", False),
+                "queries_processed_this_request": processing_result.get("processed_queries", 0),
+                "topics_updated_this_request": processing_result.get("topics_updated", 0)
+            }
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Failed to get analytics: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to retrieve analytics")
+        logger.error(f"Failed to get topic analytics: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to retrieve topic analytics")

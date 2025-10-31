@@ -109,7 +109,9 @@ class RAGPipeline:
             
             # 3. Prepare context and citations
             context, citations = self._prepare_context_and_citations(chunks)
-            
+
+            logger.info(f"prepared context: {context[:100]}...")
+
             # 4. Generate answer with LLM
             answer, confidence = await self._generate_answer(question, context)
             
@@ -239,14 +241,18 @@ class RAGPipeline:
             Tuple of (answer, confidence_score)
         """
         # Prepare prompt
-        prompt = f"""Based on the following research paper excerpts, please answer the question. Be precise and cite relevant information from the provided context.
+        prompt = f"""You are a precise RAG assistant for researchers. Analyze and respond based solely on the attached research papers' content. Do not add external knowledge, assumptions, or hallucinations. For understanding: Summarize key concepts, methods, results. For comparisons: Highlight similarities/differences in approaches, findings, limitations across papers. Cite exact excerpts with paper IDs/page numbers.
 
-Context from research papers:
-{context}
+Context from attached papers:
+{context}  # Format: Paper1: [excerpts]; Paper2: [excerpts]; etc.
 
 Question: {question}
 
-Please provide a comprehensive answer based solely on the context above. Focus on what the research papers say about this topic."""
+Response Structure:
+1. Direct Answer: Concise summary of relevant info.
+2. Evidence: Bullet points with citations (e.g., Paper1, Section X: \"Quote\").
+3. If comparison: Table of key differences/similarities.
+If question unclear or context insufficient, say: "Insufficient context; clarify query."""
 
         try:
             # Check if we can connect to Ollama first
@@ -354,7 +360,7 @@ Please provide a comprehensive answer based solely on the context above. Focus o
         # Create a simple context-based answer
         answer = f"""Based on the available research papers, I found the following relevant information:
 
-{context[:1000]}...
+{context[:2000]}...
 
 Note: This is a summarized response from the available research papers. For a more comprehensive AI-generated answer, please ensure the language model service is properly configured and running."""
         

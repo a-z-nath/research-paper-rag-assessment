@@ -17,6 +17,7 @@ from .models.paper import Paper
 from .models.chunk import Chunk  
 from .models.paper_stats import PaperStats
 from .models.query import Query
+from .models.topic_analytics import TopicAnalytics, TopicGenerationLog
 
 # Database configuration
 DATABASE_URL = os.getenv("DATABASE_URL")
