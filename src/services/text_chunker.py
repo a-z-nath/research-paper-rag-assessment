@@ -83,10 +83,10 @@ class TextChunker:
     
     def __init__(
         self,
-        target_chunk_size: int = 500,
-        max_chunk_size: int = 800,
-        min_chunk_size: int = 100,
-        overlap_size: int = 50
+        target_chunk_size: int = 130,
+        max_chunk_size: int = 180,
+        min_chunk_size: int = 90,
+        overlap_size: int = 20
     ):
         """
         Initialize the text chunker

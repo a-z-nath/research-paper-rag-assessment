@@ -173,7 +173,8 @@ class RAGPipeline:
         for result in search_results:
             chunk = {
                 "chunk_id": result.id,
-                "content": result.payload.get("content_preview", ""),
+                "content_preview": result.payload.get("content_preview", ""),
+                "content": result.payload.get("content", ""),
                 "paper_id": result.payload.get("paper_id"),
                 "paper_title": result.payload.get("paper_title"),
                 "section_name": result.payload.get("section_name"),
@@ -201,9 +202,9 @@ class RAGPipeline:
         context_parts = []
         citations = []
         
-        for i, chunk in enumerate(chunks, 1):
+        for chunk in chunks:
             # Add to context
-            context_part = f"[{i}] {chunk['content']}"
+            context_part = f"[{chunk.paper_id}] {chunk['content']}"
             context_parts.append(context_part)
             
             # Create citation

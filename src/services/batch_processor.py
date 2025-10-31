@@ -278,6 +278,7 @@ class BatchProcessor:
                 "section_type": chunk['section_type'],
                 "chunk_index": chunk['chunk_index'],
                 "content_preview": chunk['content'][:200],
+                "content": chunk['content'],
                 "file_name": paper.file_name,
                 "uploaded_at": time.time()
             }
