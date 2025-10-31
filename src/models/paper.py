@@ -17,6 +17,7 @@ class Paper(BaseModel):
     year = Column(Integer, nullable=True)
     file_name = Column(Text, nullable=False)
     file_path = Column(Text, nullable=False)  # e.g., /upload/<file>.pdf
+    full_text = Column(Text, nullable=True)  # Complete extracted text from PDF
     num_pages = Column(Integer, nullable=True)
     uploaded_at = Column(DateTime(timezone=True), default=func.now(), server_default=func.now())
     status = Column(

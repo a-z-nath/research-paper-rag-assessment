@@ -145,6 +145,7 @@ class BatchProcessor:
                     year=pdf_result.metadata.year,
                     file_name=file_name,
                     file_path=str(file_path),
+                    full_text=pdf_result.full_text,  # Store the complete extracted text
                     num_pages=pdf_result.metadata.num_pages
                 )
                 db_session.add(paper)
