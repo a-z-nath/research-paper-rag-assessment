@@ -31,12 +31,11 @@ services:
     depends_on:
       - qdrant
       - postgres
-    environment:
-      - DATABASE_URL=postgresql://user:password@postgres:5432/research_papers
-      - QDRANT_HOST=qdrant
-      - QDRANT_PORT=6333
+    env_file:
+      - docker.env
     volumes:
       - ./uploads:/app/uploads
+      - ./sample_papers:/app/sample_papers
 
 volumes:
   qdrant_storage:
