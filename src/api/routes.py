@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import List, Optional
 import time
 
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, BackgroundTasks, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -86,8 +86,11 @@ async def upload_papers(
     """
     start_time = time.time()
     
-    logger.info(f"Starting upload for {len(files)} file(s)")
-    
+    if not files:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No files provided"
+        )
     # Validate all files first
     for file in files:
         if not file.filename:
@@ -106,10 +109,8 @@ async def upload_papers(
             )
     
     try:
-        # Process all files through the batch processor
-        results = await batch_processor.process_files(files, session)
+        results = await batch_processor.process_files(files)
         
-        # Calculate summary statistics
         successful_uploads = sum(1 for r in results if r.success)
         failed_uploads = len(results) - successful_uploads
         total_processing_time = time.time() - start_time
@@ -124,7 +125,14 @@ async def upload_papers(
         elif successful_uploads == 0:
             message = f"All {failed_uploads} file(s) failed to process"
         else:
-            message = f"{successful_uploads} file(s) processed successfully, {failed_uploads} failed"
+            # All files failed - this should be an error
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={
+                    "message": f"All {len(files)} file(s) failed to process",
+                    "total_files": len(files)
+                }
+            )
         
         logger.info(f"Upload completed: {message} in {total_processing_time:.2f}s")
         
@@ -138,29 +146,14 @@ async def upload_papers(
             uploaded_papers=results,
             total_processing_time=total_processing_time
         )
-        
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions
     except Exception as e:
-        logger.error(f"Upload failed: {str(e)}", exc_info=True)
-        
-        # Return error response with what we know
-        return BatchUploadResponse(
-            success=False,
-            message=f"Upload failed: {str(e)}",
-            collection_name=batch_processor.get_collection_name(),
-            total_files=len(files),
-            successful_uploads=0,
-            failed_uploads=len(files),
-            uploaded_papers=[
-                FileUploadResult(
-                    file_name=file.filename or f"file_{i}",
-                    success=False,
-                    message="Failed due to processing error",
-                    error_details=str(e)
-                ) for i, file in enumerate(files)
-            ],
-            total_processing_time=time.time() - start_time
+        logger.error(f"Unexpected error during upload: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
         )
-
 
 @router.get("/papers", response_model=PaperListResponse)
 async def list_papers(

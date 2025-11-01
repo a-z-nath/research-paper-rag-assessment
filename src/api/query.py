@@ -12,7 +12,7 @@ import time
 import uuid
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 
 # Local imports
@@ -70,9 +70,15 @@ async def query_papers(
     start_time = time.time()
     query_id = str(uuid.uuid4())
     
-    logger.info(f"Processing query: {request.question[:100]}...")
     
     try:
+        if not request.question.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Question cannot be empty"
+            )
+
+        logger.info(f"Processing query: {request.question[:100]}...")
         # Validate paper IDs if provided
         if request.paper_ids:
             existing_papers = session.query(Paper.id).filter(
@@ -83,7 +89,7 @@ async def query_papers(
             if len(existing_ids) != len(request.paper_ids):
                 missing_ids = set(request.paper_ids) - set(existing_ids)
                 raise HTTPException(
-                    status_code=400,
+                    status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Papers not found: {list(missing_ids)}"
                 )
         
@@ -93,12 +99,18 @@ async def query_papers(
             top_k=request.top_k,
             paper_filters=request.paper_ids
         )
-        
+        if not rag_result.answer:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No relevant information found for your query"
+            )
         # Extract unique paper IDs from citations
         sourced_paper_used = list(set([
             citation.paper_id for citation in rag_result.citations
         ]))
-        
+        # Log sourced papers
+        logger.info(f"Sourced papers used in answer: {sourced_paper_used}")
+
         # Update paper stats for papers that were used in the answer
         for paper_id in sourced_paper_used:
             stats = session.query(PaperStats).filter(
@@ -269,6 +281,11 @@ async def get_popular_analytics(
         dict: TF-IDF based topic analytics with processing metadata
     """
     try:
+        if limit <= 0 or limit > 100:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Limit must be between 1 and 100"
+            )
         # Process topics using timeline approach
         processing_result = tfidf_service.process_topics_timeline(
             session=session,
