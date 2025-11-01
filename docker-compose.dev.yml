@@ -1,7 +1,6 @@
 version: "3.8"
 
 services:
-  # Qdrant Vector Database
   qdrant:
     image: qdrant/qdrant:latest
     ports:
@@ -11,7 +10,6 @@ services:
     environment:
       - QDRANT__SERVICE__HTTP_PORT=6333
 
-  # PostgreSQL Database
   postgres:
     image: postgres:15
     environment:
@@ -23,9 +21,10 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # FastAPI Application
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     depends_on:
@@ -34,8 +33,10 @@ services:
     env_file:
       - docker.env
     volumes:
+      - ./src:/app/src
       - ./uploads:/app/uploads
       - ./sample_papers:/app/sample_papers
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
 
 volumes:
   qdrant_storage:
