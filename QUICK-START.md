@@ -32,6 +32,7 @@ pip install -r requirements.txt
 ```bash
 # Copy environment template
 cp .env.example .env
+cp .env.example docker.env
 
 # Edit .env with your settings (especially Ollama Cloud API key)
 nano .env
@@ -43,6 +44,13 @@ nano .env
 OLLAMA_API_KEY=your_ollama_cloud_api_key_here
 ```
 
+**Important**: Update `docker.env` with Qdrant host and port:
+
+```bash
+QDRANT_HOST=qdrant
+QDRANT_PORT=6333
+```
+
 ## 4. Start Services with Docker
 
 ```bash
@@ -51,6 +59,11 @@ docker-compose up -d
 
 # Check if services are running
 docker-compose ps
+```
+
+```bash
+# For development with live reload
+docker-compose -f docker-compose.dev.yml up -d
 ```
 
 ## 5. Initialize Database
