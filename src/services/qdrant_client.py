@@ -25,6 +25,8 @@ from qdrant_client.http.models import (
     UpdateResult, ScoredPoint
 )
 
+from config import Settings
+
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -53,6 +55,7 @@ class StorageRequest:
     ids: Optional[List[str]] = None
     collection_name: str = "papers"
 
+settings = Settings()
 class QdrantClientService:
     """
     Qdrant client service for vector operations in RAG system
@@ -81,8 +84,8 @@ class QdrantClientService:
             distance_metric: Distance metric for similarity search
             timeout: Request timeout in seconds
         """
-        self.host = host
-        self.port = port
+        self.host = settings.QDRANT_HOST
+        self.port = settings.QDRANT_PORT
         self.collection_name = collection_name
         self.embedding_dim = embedding_dim
         self.distance_metric = distance_metric
@@ -107,57 +110,94 @@ class QdrantClientService:
             logger.info("Qdrant client initialized")
         return self._client
 
-    async def ensure_collection_exists(self, collection_name: Optional[str] = None) -> bool:
-        """
-        Ensure collection exists, create if necessary
+    # async def ensure_collection_exists(self, collection_name: Optional[str] = None) -> bool:
+    #     """
+    #     Ensure collection exists, create if necessary
         
-        Args:
-            collection_name: Collection name (uses default if None)
+    #     Args:
+    #         collection_name: Collection name (uses default if None)
             
-        Returns:
-            True if collection exists or was created successfully
-        """
-        collection_name = collection_name or self.collection_name
+    #     Returns:
+    #         True if collection exists or was created successfully
+    #     """
+    #     collection_name = collection_name or self.collection_name
         
-        # Check cache first
+    #     # Check cache first
+    #     if collection_name in self._collection_exists:
+    #         return self._collection_exists[collection_name]
+        
+    #     try:
+    #         # Check if collection exists
+    #         collections = self.client.get_collections()
+    #         existing_names = [col.name for col in collections.collections]
+            
+    #         if collection_name in existing_names:
+    #             logger.info(f"Collection '{collection_name}' already exists")
+    #             self._collection_exists[collection_name] = True
+    #             return True
+            
+    #         # Create collection
+    #         logger.info(f"Creating collection '{collection_name}'...")
+            
+    #         await self.client.create_collection(
+    #             collection_name=collection_name,
+    #             vectors_config=VectorParams(
+    #                 size=self.embedding_dim,
+    #                 distance=self.distance_metric
+    #             ),
+    #             # Optional: Configure HNSW parameters for better performance
+    #             hnsw_config=models.HnswConfigDiff(
+    #                 m=16,  # Number of bi-directional links for each node
+    #                 ef_construct=200,  # Size of the dynamic candidate list
+    #                 full_scan_threshold=10000  # Threshold for switching to full scan
+    #             )
+    #         )
+            
+    #         logger.info(f"Collection '{collection_name}' created successfully")
+    #         self._collection_exists[collection_name] = True
+    #         return True
+            
+    #     except Exception as e:
+    #         logger.error(f"Failed to ensure collection exists: {str(e)}")
+    #         self._collection_exists[collection_name] = False
+    #         return False
+
+    async def ensure_collection_exists(self, collection_name: Optional[str] = None) -> bool:
+        collection_name = collection_name or self.collection_name
+        logger.debug(f"Ensuring collection '{collection_name}' exists")
+        
         if collection_name in self._collection_exists:
             return self._collection_exists[collection_name]
-        
+
         try:
-            # Check if collection exists
-            collections = self.client.get_collections()
+            collections = self.client.get_collections()  # Remove await
             existing_names = [col.name for col in collections.collections]
+            logger.debug(f"Existing collections: {existing_names}")
             
             if collection_name in existing_names:
-                logger.info(f"Collection '{collection_name}' already exists")
+                logger.info(f"✅ Collection '{collection_name}' already exists")
                 self._collection_exists[collection_name] = True
                 return True
-            
-            # Create collection
-            logger.info(f"Creating collection '{collection_name}'...")
-            
+
+            logger.info(f"🚀 Creating collection '{collection_name}'...")
+
             self.client.create_collection(
                 collection_name=collection_name,
                 vectors_config=VectorParams(
                     size=self.embedding_dim,
                     distance=self.distance_metric
-                ),
-                # Optional: Configure HNSW parameters for better performance
-                hnsw_config=models.HnswConfigDiff(
-                    m=16,  # Number of bi-directional links for each node
-                    ef_construct=200,  # Size of the dynamic candidate list
-                    full_scan_threshold=10000  # Threshold for switching to full scan
                 )
             )
-            
-            logger.info(f"Collection '{collection_name}' created successfully")
+
+            logger.info(f"✅ Collection '{collection_name}' created successfully")
             self._collection_exists[collection_name] = True
             return True
-            
+
         except Exception as e:
-            logger.error(f"Failed to ensure collection exists: {str(e)}")
+            logger.error(f"❌ Failed to ensure collection exists: {e}")
             self._collection_exists[collection_name] = False
             return False
+
 
     async def store_vectors(self, storage_request: StorageRequest) -> bool:
         """
@@ -177,8 +217,9 @@ class QdrantClientService:
         if len(vectors) != len(payloads):
             raise ValueError("Number of vectors must match number of payloads")
         
+        collection = await self.ensure_collection_exists(collection_name)
         # Ensure collection exists
-        if not await self.ensure_collection_exists(collection_name):
+        if not collection:
             raise RuntimeError(f"Could not ensure collection '{collection_name}' exists")
         
         # Generate IDs if not provided

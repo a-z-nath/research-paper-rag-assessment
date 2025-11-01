@@ -49,7 +49,7 @@ class BatchProcessor:
         self.pdf_processor = PDFProcessor()
         self.text_chunker = TextChunker()
         self.embedding_service = EmbeddingService()
-        self.qdrant_client = QdrantClientService(collection_name=collection_name)
+        self.qdrant_client = QdrantClientService(collection_name=collection_name, host="localhost", port=6333)
         
         logger.info(f"BatchProcessor initialized with upload_dir={upload_dir}")
 

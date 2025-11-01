@@ -204,7 +204,7 @@ class RAGPipeline:
         
         for chunk in chunks:
             # Add to context
-            context_part = f"[{chunk.paper_id}] {chunk['content']}"
+            context_part = f"[{chunk['chunk_id']}] {chunk['content']}"
             context_parts.append(context_part)
             
             # Create citation
