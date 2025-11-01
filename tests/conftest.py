@@ -6,17 +6,18 @@ import sys
 import os
 from pathlib import Path
 
-# Add src to Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+# Add project root to Python path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 @pytest.fixture(scope="session")
-def src_path():
-    """Add src directory to Python path"""
+def project_root():
+    """Add project root directory to Python path"""
     current_dir = Path(__file__).parent
-    src_dir = current_dir.parent / "src"
-    if str(src_dir) not in sys.path:
-        sys.path.insert(0, str(src_dir))
-    return str(src_dir)
+    root_dir = current_dir.parent
+    if str(root_dir) not in sys.path:
+        sys.path.insert(0, str(root_dir))
+    return str(root_dir)
 
 @pytest.fixture
 def sample_papers_dir():

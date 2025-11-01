@@ -6,9 +6,11 @@ import sys
 import os
 import uuid
 from datetime import datetime
+from pathlib import Path
 
-# Add src to path
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 from src.database import engine, create_tables, get_database_session
 from src.models import Paper, Chunk, PaperStats, Query

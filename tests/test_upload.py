@@ -9,8 +9,9 @@ import sys
 import uuid
 from pathlib import Path
 
-# Add src to path
-sys.path.append(str(Path(__file__).parent / "src"))
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 from src.services.embedding_service import EmbeddingService
 from src.services.qdrant_client import QdrantClientService, StorageRequest
