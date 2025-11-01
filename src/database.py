@@ -8,16 +8,16 @@ from sqlalchemy.pool import NullPool
 from dotenv import load_dotenv
 
 # Import Base first
-from .models.base import Base
+from src.models.base import Base
 
 load_dotenv()
 
 # Import models after Base to avoid circular imports
-from .models.paper import Paper
-from .models.chunk import Chunk  
-from .models.paper_stats import PaperStats
-from .models.query import Query
-from .models.topic_analytics import TopicAnalytics, TopicGenerationLog
+from src.models.paper import Paper
+from src.models.chunk import Chunk  
+from src.models.paper_stats import PaperStats
+from src.models.query import Query
+from src.models.topic_analytics import TopicAnalytics, TopicGenerationLog
 
 # Database configuration
 DATABASE_URL = os.getenv("DATABASE_URL")

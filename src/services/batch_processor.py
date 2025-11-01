@@ -15,6 +15,7 @@ from typing import List, Dict, Any
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
+from src.database import get_database_session
 from src.models.paper import Paper
 from src.models.paper_stats import PaperStats
 from src.models.chunk import Chunk
@@ -56,14 +57,12 @@ class BatchProcessor:
     async def process_files(
         self, 
         files: List[UploadFile], 
-        db_session: Session
     ) -> List[FileUploadResult]:
         """
         Process multiple files through the complete pipeline
         
         Args:
             files: List of uploaded files
-            db_session: Database session
             
         Returns:
             List of processing results for each file
@@ -72,6 +71,8 @@ class BatchProcessor:
         
         # Ensure Qdrant collection exists
         await self.qdrant_client.ensure_collection_exists(self.collection_name)
+        
+        db_session = get_database_session()
         
         # Process files with concurrency control
         semaphore = asyncio.Semaphore(self.max_concurrent_files)

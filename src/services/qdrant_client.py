@@ -25,7 +25,7 @@ from qdrant_client.http.models import (
     UpdateResult, ScoredPoint
 )
 
-from config import Settings
+from src.config import Settings
 
 logger = logging.getLogger(__name__)
 
