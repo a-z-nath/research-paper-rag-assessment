@@ -1,0 +1,29 @@
+# FastAPI and server dependencies
+fastapi
+uvicorn[standard]
+pydantic
+
+# Environment and configuration
+python-dotenv
+
+# PDF processing
+PyPDF2
+pdfplumber
+
+# Database
+sqlalchemy
+alembic
+
+# Vector DB
+qdrant-client
+
+# Embeddings and ML
+sentence-transformers
+numpy
+
+# Google Generative AI
+google-genai
+
+# Additional utilities
+requests
+python-multipart
