@@ -1,413 +1,344 @@
-# 🎓 Research Paper Assistant - RAG System Assessment
+# 🎓 Research Paper RAG Assistant
 
-## 🎯 Objective
-Build a production-ready RAG (Retrieval-Augmented Generation) service that helps researchers efficiently query and understand academic papers.
-
-## 💡 The Problem
-Researchers waste hours reading through multiple papers to find:
-- Specific methodologies and approaches
-- Key findings and results
-- Dataset information and benchmarks
-- Comparative analysis across papers
-- Citations and references
-
-**Your mission**: Build an intelligent assistant that does this in seconds.
-
----
-
-## 🛠️ Required Tech Stack
-
-| Component | Technology | Why |
-|-----------|-----------|-----|
-| **Vector DB** | Qdrant | Fast similarity search |
-| **Database** | PostgreSQL/MySQL/MongoDB | Metadata & query history |
-| **LLM** | Ollama OR DeepSeek | Answer generation |
-| **Embeddings** | sentence-transformers | Text vectorization |
-| **Backend** | Python + FastAPI/Flask Or Any Other Language | API service |
-
----
-
-## 📋 Features to Implement
-
-### ✅ Must-Have Features
-
-#### 1. Document Ingestion System
-```python
-POST /api/papers/upload
-```
-- Accept PDF research papers
-- Extract text with section awareness (Abstract, Intro, Methods, Results, Conclusion)
-- Intelligent chunking (preserve semantic context)
-- Generate embeddings
-- Store vectors in Qdrant with metadata
-- Save paper info in database
-
-**Expected Behavior**:
-- Handle multi-page PDFs
-- Extract author names, title, year
-- Store page numbers for citations
-- Process 5 papers in < 2 minutes
-
-#### 2. Intelligent Query System
-```python
-POST /api/query
-{
-  "question": "What methodology was used in the transformer paper?",
-  "top_k": 5,
-  "paper_ids": [1, 3]  // optional: limit to specific papers
-}
-```
-
-**Response Format**:
-```json
-{
-  "answer": "The transformer paper uses a self-attention mechanism...",
-  "citations": [
-    {
-      "paper_title": "Attention is All You Need",
-      "section": "Methodology",
-      "page": 3,
-      "relevance_score": 0.89
-    }
-  ],
-  "sources_used": ["paper3_nlp_transformers.pdf"],
-  "confidence": 0.85
-}
-```
-
-#### 3. Paper Management
-```python
-GET    /api/papers              # List all papers
-GET    /api/papers/{id}         # Get paper details
-DELETE /api/papers/{id}         # Remove paper + vectors
-GET    /api/papers/{id}/stats   # View/download stats
-```
-
-#### 4. Query History & Analytics
-```python
-GET /api/queries/history         # Recent queries
-GET /api/analytics/popular       # Most queried topics
-```
-
-Store:
-- Query text
-- Papers referenced
-- Response time
-- User satisfaction (optional rating)
-
----
-
-## 🏗️ System Architecture
-
-```
-┌─────────────┐
-│   Client    │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────────────────┐
-│      FastAPI Application        │
-│  ┌───────────────────────────┐  │
-│  │   Document Processor      │  │
-│  │  - PDF extraction         │  │
-│  │  - Chunking strategy      │  │
-│  │  - Embedding generation   │  │
-│  └───────────────────────────┘  │
-│                                  │
-│  ┌───────────────────────────┐  │
-│  │   RAG Pipeline            │  │
-│  │  - Query understanding    │  │
-│  │  - Vector retrieval       │  │
-│  │  - Context assembly       │  │
-│  │  - LLM generation         │  │
-│  └───────────────────────────┘  │
-└────┬──────────────────┬─────────┘
-     │                  │
-     ▼                  ▼
-┌─────────┐      ┌──────────────┐
-│ Qdrant  │      │ PostgreSQL/  │
-│ Vector  │      │ MySQL        │
-│ Store   │      │ (Metadata)   │
-└─────────┘      └──────────────┘
-     │
-     ▼
-┌─────────────┐
-│ Ollama/     │
-│ DeepSeek    │
-│ (LLM)       │
-└─────────────┘
-```
-
----
-
-## 📊 Test Dataset
-
-**5 Sample Papers Provided** (in `sample_papers/` directory):
-
-1. `paper1_machine_learning.pdf` - Classic ML algorithms
-2. `paper2_neural_networks.pdf` - Deep learning architectures
-3. `paper3_nlp_transformers.pdf` - Transformer models
-4. `paper4_computer_vision.pdf` - CNN and vision models
-5. `paper5_reinforcement_learning.pdf` - RL algorithms
-
-**20 Test Queries** provided in `test_queries.json` covering:
-- Single-paper queries (easy)
-- Multi-paper comparisons (medium)
-- Abstract concept queries (hard)
-
----
+A production-ready Retrieval-Augmented Generation (RAG) system that helps researchers efficiently query and understand academic papers using vector search and cloud-based LLM integration.
 
 ## 🚀 Getting Started
 
-### Prerequisites
+**New to the project?** Check out our [Quick Start Guide](QUICK-START.md) for step-by-step setup instructions.
+
+## 📋 API Documentation
+
+### 🔄 Health Check
+
 ```bash
-# Python 3.10+
-python --version
-
-# Docker (for Qdrant)
-docker --version
-
-# Ollama (if using local LLM)
-curl https://ollama.ai/install.sh | sh
+curl http://localhost:8000/health
 ```
 
-### Quick Setup
+### 📄 Paper Management
 
-1. **Fork this repository**
-   ```bash
-   # Click "Fork" button on GitHub
-   ```
+#### Upload Papers
 
-2. **Clone your fork**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/research-paper-rag-assessment.git
-   cd research-paper-rag-assessment
-   ```
+```bash
+# Single file
+curl -X POST "http://localhost:8000/api/papers/upload" \
+  -H "Content-Type: multipart/form-data" \
+  -F "files=@paper1.pdf"
 
-3. **Create working branch**
-   ```bash
-   git checkout -b submission/YOUR_NAME
-   ```
-
-4. **Set up environment**
-   ```bash
-   # Start Qdrant
-   docker run -p 6333:6333 qdrant/qdrant
-   
-   # Install Ollama and pull model
-   ollama pull llama3
-   # OR set up DeepSeek API key
-   
-   # Create Python virtual environment
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-5. **Start building!** 🎉
-
----
-
-## 📦 Submission Requirements
-
-### Your Repo Structure Should Look Like:
-```
-your-fork/
-├── src/
-│   ├── main.py                 # FastAPI app
-│   ├── models/                 # Data models
-│   ├── services/
-│   │   ├── pdf_processor.py
-│   │   ├── embedding_service.py
-│   │   ├── qdrant_client.py
-│   │   └── rag_pipeline.py
-│   ├── api/
-│   │   └── routes.py
-│   └── config.py
-├── tests/                      # Unit tests (bonus)
-├── requirements.txt
-├── .env.example
-├── docker-compose.yml          # (optional)
-├── README.md                   # YOUR documentation
-├── APPROACH.md                 # Design decisions
-└── architecture.png            # System diagram
+# Multiple files
+curl -X POST "http://localhost:8000/api/papers/upload" \
+  -H "Content-Type: multipart/form-data" \
+  -F "files=@paper1.pdf" \
+  -F "files=@paper2.pdf"
 ```
 
-### Must Include:
+#### List Papers
 
-1. **README.md** with:
-   - Clear setup instructions (step-by-step)
-   - How to run the application
-   - API endpoint documentation
-   - Example curl commands or Postman collection
-   - Architecture explanation
+```bash
+curl http://localhost:8000/api/papers
+```
 
-2. **APPROACH.md** explaining:
-   - Chunking strategy and why
-   - Embedding model choice
-   - Prompt engineering approach
-   - Database schema design
-   - Trade-offs and limitations
+#### Get Paper Details
 
-3. **Working Code** that:
-   - Processes all 5 sample papers
-   - Answers test queries accurately
-   - Includes error handling
-   - Has proper logging
+```bash
+# Without full text
+curl http://localhost:8000/api/papers/{paper_id}
 
-4. **Configuration**:
-   - `.env.example` (no secrets!)
-   - `requirements.txt` (complete)
+# With full text
+curl "http://localhost:8000/api/papers/{paper_id}?include_full_text=true"
+```
+
+#### Delete Paper
+
+```bash
+curl -X DELETE http://localhost:8000/api/papers/{paper_id}
+```
+
+### 🔍 Query System
+
+#### Query Papers
+
+```bash
+# Basic query
+curl -X POST "http://localhost:8000/api/query" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "What are the main contributions of transformer architecture?",
+    "top_k": 5
+  }'
+
+# Query specific papers
+curl -X POST "http://localhost:8000/api/query" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "Compare CNN and transformer approaches",
+    "top_k": 10,
+    "paper_ids": ["paper-uuid-1", "paper-uuid-2"]
+  }'
+```
+
+#### Query History
+
+```bash
+curl "http://localhost:8000/api/queries/history?limit=10&offset=0"
+```
+
+### 📊 Analytics
+
+#### Popular Topics
+
+```bash
+# Last 30 days
+curl "http://localhost:8000/api/analytics/popular?days=30&limit=10"
+
+# All time with minimum count
+curl "http://localhost:8000/api/analytics/popular?days=0&limit=15&min_count=3"
+
+# Force rebuild topics
+curl "http://localhost:8000/api/analytics/popular?force_rebuild=true"
+```
+
+#### RAG Pipeline Health
+
+```bash
+curl http://localhost:8000/api/rag/health
+```
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                          Client Layer                           │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+┌─────────────────────────────────────────────────────────────────┐
+│                     FastAPI Application                         │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐    │
+│  │   Paper APIs    │ │   Query APIs    │ │ Analytics APIs  │    │
+│  │  - Upload       │ │  - RAG Pipeline │ │  - TF-IDF       │    │
+│  │  - Management   │ │  - Query Hist   │ │  - Topics       │    │
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘    │
+│                               │                                 │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                Service Layer                            │    │
+│  │ ┌─────────────┐ ┌─────────────┐ ┌─────────────────────┐ │    │
+│  │ │PDF Processor│ │Text Chunker │ │  Embedding Service  │ │    │
+│  │ │- Extract    │ │- Section    │ │  - SentenceTransf   │ │    │
+│  │ │- Metadata   │ │- Semantic   │ │  - Batch Process    │ │    │
+│  │ └─────────────┘ └─────────────┘ └─────────────────────┘ │    │
+│  │                                                         │    │
+│  │ ┌─────────────┐ ┌─────────────┐ ┌─────────────────────┐ │    │
+│  │ │RAG Pipeline │ │Batch Process│ │  TF-IDF Service     │ │    │
+│  │ │- Retrieval  │ │- Multi-file │ │  - Topic Extract    │ │    │
+│  │ │- Generation │ │- Error Hand │ │  - Timeline Cache   │ │    │
+│  │ └─────────────┘ └─────────────┘ └─────────────────────┘ │    │
+│  └─────────────────────────────────────────────────────────┘    │
+└──────────────┬─────────────────┬─────────────────┬──────────────┘
+               │                 │                 │
+┌──────────────▼──────────────┐ ┌▼────────────────┐ ┌▼──────────────┐
+│        Qdrant Vector DB     │ │   PostgreSQL    │ │ Ollama Cloud  │
+│  - Embeddings Storage       │ │  - Papers       │ │  - LLM Gen    │
+│  - Similarity Search        │ │  - Chunks       │ │  - llama3     │
+│  - Metadata Filtering       │ │  - Queries      │ │  - Cloud API  │
+│  - Collection Management    │ │  - Analytics    │ │  - Scalable   │
+└─────────────────────────────┘ └─────────────────┘ └───────────────┘
+```
+
+## 💾 Database Schema
+
+### Core Tables
+
+- **papers**: Metadata, full text, upload info
+- **chunks**: Text segments with embeddings refs
+- **queries**: User questions and responses
+- **paper_stats**: Usage analytics per paper
+- **topic_analytics**: TF-IDF topic cache
+- **topic_generation_log**: Processing timeline
+
+## � Configuration
+
+### Environment Variables
+
+```bash
+# Database
+DATABASE_URL=postgresql://username:password@localhost:5432/research_rag_db
+
+# Qdrant Vector Database
+QDRANT_HOST=localhost
+QDRANT_PORT=6333
+
+# Cloud Ollama Configuration
+OLLAMA_BASE_URL=https://ollama.com
+OLLAMA_API_KEY=your_ollama_cloud_api_key_here
+OLLAMA_MODEL=deepseek-v3.1:671b-cloud
+
+# Application
+DEBUG=true
+APP_NAME=Research Paper RAG System
+APP_VERSION=1.0.0
+```
+
+## 🧪 Testing
+
+### Test with Sample Data
+
+```bash
+# Upload all test papers
+curl -X POST "http://localhost:8000/api/papers/upload" \
+  -F "files=@sample_papers/paper1_machine_learning.pdf" \
+  -F "files=@sample_papers/paper2_neural_networks.pdf" \
+  -F "files=@sample_papers/paper3_nlp_transformers.pdf" \
+  -F "files=@sample_papers/paper4_computer_vision.pdf" \
+  -F "files=@sample_papers/paper5_reinforcement_learning.pdf"
+
+# Test query from test_queries.json
+curl -X POST "http://localhost:8000/api/query" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "What is the main contribution of the paper?",
+    "top_k": 5
+  }'
+```
+
+### Run Health Checks
+
+```bash
+# Check all services
+curl http://localhost:8000/health
+
+# Check RAG pipeline specifically
+curl http://localhost:8000/api/rag/health
+```
+
+## 📦 Project Structure
+
+```
+src/
+├── main.py                 # FastAPI application entry
+├── config.py              # Configuration management
+├── database.py            # Database connection & models
+├── api/
+│   ├── routes.py          # Paper management endpoints
+│   └── query.py           # Query & analytics endpoints
+├── models/
+│   ├── paper.py           # Paper data model
+│   ├── chunk.py           # Text chunk model
+│   ├── query.py           # Query history model
+│   ├── paper_stats.py     # Analytics model
+│   └── topic_analytics.py # Topic cache model
+├── schemas/
+│   ├── paper.py           # API request/response schemas
+│   ├── query.py           # Query schemas
+│   └── upload.py          # Upload schemas
+└── services/
+    ├── pdf_processor.py    # PDF text extraction
+    ├── text_chunker.py     # Semantic chunking
+    ├── embedding_service.py # Vector embeddings
+    ├── qdrant_client.py    # Vector database client
+    ├── rag_pipeline.py     # RAG query processing
+    ├── batch_processor.py  # Multi-file processing
+    └── tfidf_topic_service.py # Topic analytics
+```
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+#### "Cannot connect to Qdrant"
+
+```bash
+# Check if Qdrant is running
+docker-compose ps
+
+# Restart services
+docker-compose restart qdrant
+```
+
+#### "Database connection failed"
+
+```bash
+# Check PostgreSQL connection
+docker-compose exec postgres psql -U user -d research_papers
+
+# Recreate database
+docker-compose exec api python -c "from src.database import create_tables; create_tables()"
+```
+
+#### "Ollama Cloud API not responding"
+
+```bash
+# Check your API key in .env file
+grep OLLAMA_API_KEY .env
+
+# Test API connection
+curl -H "Authorization: Bearer YOUR_API_KEY" https://ollama.com/api/v1/models
+```
+
+#### "Embedding model download slow"
+
+- First run downloads ~90MB model
+- Check internet connection
+- Model cached in `~/.cache/torch/sentence_transformers/`
+
+### Performance Issues
+
+#### Slow uploads
+
+- Check chunk size configuration in `text_chunker.py`
+- Monitor Qdrant storage space
+- Verify embedding batch size
+
+#### Query timeouts
+
+- Check Ollama Cloud response time
+- Verify Qdrant index status
+- Monitor database query performance
+
+## � Performance Metrics
+
+### Expected Performance
+
+- **PDF Processing**: ~2-5 seconds per paper
+- **Query Response**: ~1-3 seconds (cached topics)
+- **Cold Query**: ~3-8 seconds (includes Cloud LLM)
+- **Upload Batch**: ~30-60 seconds for 5 papers
+
+### Optimization Tips
+
+- Use TF-IDF topic caching for analytics
+- Batch upload multiple papers
+- Monitor embedding cache hits
+- Keep Qdrant collection optimized
+
+## 🔒 Security Notes
+
+- Cloud API keys stored in environment variables
+- File uploads limited to PDF only
+- SQL injection protected via SQLAlchemy ORM
+- Input validation on all endpoints
+- No authentication implemented (development only)
+
+## 🐳 Docker Deployment
+
+### Development
+
+```bash
+docker compose up -d
+```
+
+## 📄 License
+
+MIT License - See LICENSE file for details
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ---
 
-## ✅ Self-Check Before Submission
+**Need Help?** Open an issue or check the troubleshooting section above.
 
-- [ ] Can upload and process PDFs
-- [ ] Query endpoint returns relevant answers
-- [ ] Citations include paper name + section/page
-- [ ] All 5 papers successfully indexed
-- [ ] Tested with queries from `test_queries.json`
-- [ ] API returns proper error messages
-- [ ] README has complete setup instructions
-- [ ] No hardcoded paths or credentials
-- [ ] Code is clean and commented
-- [ ] Logs to console/file
-
----
-
-## 🎯 Evaluation Criteria
-
-| Category | Weight | Key Points |
-|----------|--------|------------|
-| **Functionality** | 35% | Features work, edge cases handled |
-| **RAG Quality** | 25% | Relevant retrieval, accurate answers, citations |
-| **Code Quality** | 20% | Clean, modular, error handling |
-| **Documentation** | 10% | Clear setup, architecture explained |
-| **API Design** | 10% | RESTful, proper validation |
-| **Bonus** | +15% | Tests, Docker, UI, extras |
-
-**Total**: 100 points + 15 bonus = 115 possible
-
-### Scoring:
-- **90+**: Exceptional - Strong hire ⭐
-- **75-89**: Good - Hire with mentoring ✅
-- **60-74**: Borderline - Discussion needed ⚠️
-- **<60**: Does not meet requirements ❌
-
----
-
-## 🏆 Bonus Features (Optional)
-
-Impress us with:
-- ✨ **Docker Compose** - One command setup
-- 🧪 **Unit Tests** - >60% coverage
-- 🎨 **Simple Web UI** - Upload & query interface
-- 🔄 **Multi-paper Compare** - Side-by-side analysis
-- ⚡ **Caching** - Speed up repeat queries
-- 📊 **Analytics Dashboard** - Query insights
-- 🔒 **Authentication** - Basic API keys
-- 📝 **Export Results** - Save as PDF/Markdown
-
----
-
-## ⏱️ Timeline
-
-**Recommended**: 3 daus
-
-- **Day 1**: Setup + PDF processing + Qdrant integration
-- **Day 2**: Database schema + embeddings + basic API
-- **Day 3**: RAG pipeline + LLM integration
-- **Day 4**: Testing + documentation + refinement
-- **Day 5**: Bonus features + final polish
-
-**Submission Deadline**: [31st October 2025]
-
----
-
-## 📨 How to Submit
-
-1. **Push your code** to your fork
-2. **Create Pull Request** to this repo's `master` branch
-3. **Fill out PR template** completely
-4. **Wait for review** (we'll respond within 3 business days)
-
-Detailed submission guide: See [SUBMISSION_GUIDE.md](SUBMISSION_GUIDE.md)
-
-Detailed Pull request guide: See [PULL_REQUEST_TEMPLATE.md]()
-
----
-
-## ❓ Need Help?
-
-**Technical Questions**:
-- Open an issue with `question` label
-- We respond within 24 hours (weekdays)
-
-**Submission Issues**:
-- Check [SUBMISSION_GUIDE.md](SUBMISSION_GUIDE.md)
-- Check [PULL_REQUEST_TEMPLATE.md](PULL_REQUEST_TEMPLATE.md)
-- Email: [ishmam.abid5422@gmail.com]
-
-**Clarifications**:
-- Don't assume - ask!
-- We prefer over-communication
-
----
-
-## 🎓 What Happens After Submission?
-
-1. ✅ **Code Review** (2-3 days)
-   - Automated tests run
-   - Manual code review
-   - Documentation check
-
-2. 📞 **Technical Interview** (1 hour)
-   - Discuss your solution
-   - Architecture deep-dive
-   - Potential improvements
-   - Scaling scenarios
-
-3. 🎉 **Decision** (within 1 week)
-
----
-
-## 🌟 Tips for Success
-
-**DO**:
-- ✅ Start simple, then enhance
-- ✅ Test with provided papers/queries
-- ✅ Write clear documentation
-- ✅ Handle errors gracefully
-- ✅ Explain your decisions
-- ✅ Ask questions if unclear
-
-**DON'T**:
-- ❌ Hardcode credentials
-- ❌ Copy-paste without understanding
-- ❌ Skip error handling
-- ❌ Ignore the test dataset
-- ❌ Submit without testing
-- ❌ Overcomplicate unnecessarily
-
----
-
-## 📚 Helpful Resources
-
-- [Qdrant Documentation](https://qdrant.tech/documentation/)
-- [Ollama Documentation](https://ollama.ai/docs)
-- [LangChain RAG Guide](https://python.langchain.com/docs/use_cases/question_answering/)
-- [FastAPI Tutorial](https://fastapi.tiangolo.com/tutorial/)
-- [Sentence Transformers](https://www.sbert.net/)
-
----
-
-## 🤝 Good Luck!
-
-We're excited to see your solution! This assessment reflects real work you'd do as a Junior AI Engineer on our team. Show us your problem-solving skills, code quality, and passion for AI.
-
-Remember: We're not looking for perfection - we're looking for potential, clear thinking, and solid fundamentals.
-
-**Questions? Open an issue!**
-**Ready? Fork and start building!** 🚀
-
----
+**API Documentation**: Visit http://localhost:8000/docs when running locally.
